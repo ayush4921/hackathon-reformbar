@@ -18,29 +18,22 @@
     <script src="https://www.gstatic.com/firebasejs/4.8.2/firebase-auth.js"></script>
 </head>
 <body>
-
-
 	<div class="container-contact100">
 		<div class="wrap-contact100">
 			<div class="contact100-form validate-form"  id = "form1">
 				<span class="contact100-form-title">
 					Registration form:
 				</span>
-
 				<div class="wrap-input100 validate-input" data-validate="Name is required">
 					<span class="label-input100">Your Name* </span>
 					<input class="input100" id="name" type="text" name="name" placeholder="Enter your name">
 					<span class="focus-input100"></span>
 				</div>
-
-				
-
 				<div class="wrap-input100 validate-input" data-validate = "Valid email is required: ex@abc.xyz">
 					<span class="label-input100">Date of birth*</span>
 					<input class="input100" id="dob" type="date" name="dob" value = "2000-04-21" required>
 					<span class="focus-input100"></span>
 				</div>
-
 				<div class="wrap-input100 input100-select">
 					<label for = "gender"> Gender*</label><br>
 					<select id = "gender">
@@ -49,29 +42,18 @@
     					<option value="Others">Others</option>
     					<option value="Prefer Not To Say">Prefer Not To Say</option>
 					</select>
-		
-		
-				
-
 					<span class="focus-input100"></span>
 				</div>
-				
 				<div class="wrap-input100 validate-input" data-validate = "Weight is required">
 					<span class="label-input100">Weight (in kgs)*</span>
 					<input class="input100" id="weight" type="number" name="weight" placeholder = "70" required>
 					<span class="focus-input100"></span>
 				</div>
-				
-
 				<div class="wrap-input100 validate-input" data-validate = "Height is required">
 					<span class="label-input100">Height (in cm)*</span>
 					<input class="input100" id="height" type="number" name="height" placeholder = "160" required>
 					<span class="focus-input100"></span>
 				</div>
-				
-
-				
-
 				<div class="wrap-input100 input100-select">
 					<span class="label-input100">Total cash (in dollars)*: </span>
 					<div>
@@ -79,14 +61,11 @@
 					</div>
 
 				</div>
-
-	
 				<div class="wrap-input100 validate-input" data-validate = "ID Number is required">
 					<span class="label-input100">ID number: </span>
 					<input class = "input100" id="id_official" type = "text" name = "id" required>
 					<span class="focus-input100"></span>
 				</div>
-
 				<div class="container-contact100-form-btn">
 					<div class="wrap-contact100-form-btn">
 						<div class="contact100-form-bgbtn"></div>
@@ -103,10 +82,7 @@
 			</div>
 		</div>
 	</div>
-
-
 	<div id="dropDownSelect1"></div>
-
 	<script src="../static/index/vendor/jquery/jquery-3.2.1.min.js"></script>
 	<script src="../static/index/vendor/animsition/js/animsition.min.js"></script>
 	<script src="../static/index/vendor/bootstrap/js/popper.js"></script>
@@ -118,57 +94,19 @@
 			dropdownParent: $('#dropDownSelect1')
 		});
 	</script>
-	<script>
-		$("#submit_button").click(function(event) {
-			event.preventDefault();
-			var name = $("#name").val();
-			var dob = $("#dob").val();
-			var gender = $("#gender").val();
-			var weight = $("#weight").val();
-			var height = $("#height").val();
-			var payment = $("#payment").val();
-			var id_official = $("#id_official").val();
-			console.log(name, dob, gender, weight, height, payment, id_official)
-			firebase.auth().onAuthStateChanged(function (user) {
-				if (user) {
-					$.ajax({
-						data: {
-							'name': name,
-							'dob': dob,
-							'gender': gender,
-							'payment': payment,
-							'height': height,
-							'weight': weight,
-							'id':user.uid,
-							'photoURL':user.photoURL,
-							'id_official': id_official,
-							'email':user.email,
-						},
-						type: "POST",
-						url: "http://127.0.0.1:5000/makeqrcodeandsetupfirebase",
-					}).done(function (data) {
-						$('#form1').hide();
-						$('#result').html('<img id="myimg" width="100%" height="100%" src="/static/id_images/'+user.uid+'.png"/>');
-					});
-				}
-			});
-			return false;
-		});
-	</script>
+	<script src="../static/index/index.js"></script>
 	<script src="../static/index/vendor/daterangepicker/moment.min.js"></script>
 	<script src="../static/index/vendor/daterangepicker/daterangepicker.js"></script>
 	<script src="../static/index/vendor/countdowntime/countdowntime.js"></script>
 	<script src="../static/index/js/main.js"></script>
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-23581568-13"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
 
-	<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-23581568-13"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'UA-23581568-13');
-</script>
-<script src="../static/index/fireBase.js"></script>
+		gtag('config', 'UA-23581568-13');
+	</script>
+	<script src="../static/index/fireBase.js"></script>
 </body>
 </html>
