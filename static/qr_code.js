@@ -28,7 +28,7 @@ docReady(function () {
           password: "36fb75181c26195f01aff5144aa1464b",
         },
         type: "POST",
-        url: "http://127.0.0.1:5000/add_drink",
+        url: "https://reformbar.herokuapp.com/add_drink",
       }).done(function (data) {
         console.log("Request sent");
         alert(data);
