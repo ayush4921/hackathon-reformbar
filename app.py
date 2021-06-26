@@ -8,6 +8,7 @@ import dateutil
 from dateutil import parser
 from datetime import datetime
 import smtplib
+import ssl
 
 cred_obj = firebase_admin.credentials.Certificate(
     'reformbar-a4b02-firebase-adminsdk-y0re0-40695dbdf0.json')
@@ -119,7 +120,8 @@ def add_drink():
     id = request.form["id"]
     db = firestore.client()
     accepted_nuicances, bac_accepted, days_after_database_refreshes, drinking_attemps_before_email, legal_drinking_age = make_limit_constants()
-    doc_ref, drink_data, existing_data = make_existing_data_dicts(db,  id, name)
+    doc_ref, drink_data, existing_data = make_existing_data_dicts(
+        db,  id, name)
 
     date = parser.parse(existing_data["dob"])
     date_updated = parser.parse(existing_data["date_updated"])
@@ -127,7 +129,8 @@ def add_drink():
     number_of_days = get_days(date_updated, now)
     age = get_age_difference(date, now)
 
-    bac = calculate_bac(float(existing_data["drinks"]), float(existing_data["weight"]), existing_data["gender"], alcohol_consumed=float(existing_data["alcohol"])+float(drink_data["alcohol"]))
+    bac = calculate_bac(float(existing_data["drinks"]), float(
+        existing_data["weight"]), existing_data["gender"], alcohol_consumed=float(existing_data["alcohol"])+float(drink_data["alcohol"]))
 
     if number_of_days > days_after_database_refreshes:
         doc_ref, drink_data, existing_data = flush_database(db, doc_ref, drink_data, existing_data, id, name,
@@ -242,14 +245,12 @@ def update_drinking_attempts(doc_ref, existing_data):
 
 
 def send_email(email):
-
-    gmail_user = 'pogchampvignesh123@gmail.com'
-    gmail_password = 'vigneshisbae123'
-
-    sent_from = gmail_user
-    to = [email, ]
-    subject = 'Noticed High Number Of Drinking Attempts'
-    body = '''Good evening
+    port = 587  # For starttls
+    smtp_server = "smtp.gmail.com"
+    sender_email = 'pogchampvignesh123@gmail.com'
+    receiver_email = email
+    password = "vigneshisbae123"
+    message = '''Good evening
 
             We have observed that you have been going out to the bar very often. 
             It should be noted that, while drinking in control is acceptable, alcohol intake can lead to a plethora of health issues, including liver failure, hypertension and anxiety.
@@ -261,23 +262,13 @@ def send_email(email):
             Thank you Sir/Ma'am
     '''
 
-    email_text = """\
-    From: %s
-    To: %s
-    Subject: %s
-
-    %s
-    """ % (sent_from, ", ".join(to), subject, body)
-
-    try:
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 587)
-        server.ehlo()
-        server.login(gmail_user, gmail_password)
-        server.sendmail(sent_from, to, email_text)
-        server.close()
-        print('Email sent!')
-    except:
-        print('Something went wrong...')
+    context = ssl.create_default_context()
+    with smtplib.SMTP(smtp_server, port) as server:
+        server.ehlo()  # Can be omitted
+        server.starttls(context=context)
+        server.ehlo()  # Can be omitted
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, message)
 
 
 def calculate_bac(no_of_drinks, body_weight_in_kg, gender, r=0.55, alcohol_consumed=14.0):
