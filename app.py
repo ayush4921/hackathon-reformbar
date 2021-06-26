@@ -102,10 +102,7 @@ def serve_drinks(variable):
 
 @app.route('/profile/<id>', methods=['GET'])
 def serve_profile(id):
-    db = firestore.client()
-    doc_ref = db.collection(u'customers').document(id)
-    doc = doc_ref.get()
-    existing_data = doc.to_dict()
+    existing_data = get_dict_for_document_and_collection(id, 'customers')
     return render_template("profile.html", data=existing_data)
 
 
@@ -117,7 +114,6 @@ def serve_details():
 @app.route('/management')
 def serve_management():
     db = firestore.client()
-
     doc_ref = db.collection(u'customers').stream()
     all_users = []
     for users in doc_ref:
@@ -242,13 +238,14 @@ def get_todays_date():
 
 def make_existing_data_dicts(db, id, name):
     doc_ref = db.collection(u'customers').document(id)
+    return doc_ref, get_dict_for_document_and_collection(name,'drink'), get_dict_for_document_and_collection(id,'customers')
+
+def get_dict_for_document_and_collection(document,collection):
+    db = firestore.client()
+    doc_ref = db.collection(collection).document(document)
     doc = doc_ref.get()
     existing_data = doc.to_dict()
-    drink_ref = db.collection(u'drink').document(name)
-    doc_drink = drink_ref.get()
-    drink_data = doc_drink.to_dict()
-    return doc_ref, drink_data, existing_data
-
+    return existing_data
 
 def send_successful_order(doc_ref, drink_data, existing_data):
     balance = str(float(existing_data["payment"]) - float(drink_data["price"]))
