@@ -1,5 +1,4 @@
 
-import json
 from flask import Flask, request, render_template
 from flask_cors import CORS
 import firebase_admin
@@ -74,6 +73,11 @@ def serve_register():
     return render_template("index.html")
 
 
+@app.route('/bar')
+def serve_bar():
+    return render_template("menu.html")
+
+
 @app.route('/drink/<variable>', methods=['GET'])
 def serve_drinks(variable):
     data = {"drink_id": variable, "abc": "abc"}
@@ -121,10 +125,10 @@ def add_drink():
         return "Successful Order Placed"
     else:
         if bac > 0.07:
-            return  "Unsuccessful order:  BAC levels too high"
-        elif float(existing_data["payment"]) > float(drink_data["price"]):
+            return "Unsuccessful order:  BAC levels too high"
+        elif float(existing_data["payment"]) < float(drink_data["price"]):
             return "Unsuccessful order: Not enough money"
-        elif age > 18:
+        elif age < 18:
             return "Unsuccessful order: Under the legal age of alcohol consumption"
         return "Unsuccessful Order"
 
