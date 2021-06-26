@@ -81,7 +81,7 @@ def makeqrcodes(id):
 
 @app.route('/')
 def serve_login():
-    return render_template("login.html")
+    return render_template("main_page.html")
 
 
 @app.route('/register')
