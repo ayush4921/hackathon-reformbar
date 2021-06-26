@@ -246,7 +246,7 @@ def send_successful_order(doc_ref, drink_data, existing_data):
         u'payment': balance,
     }
     doc_ref.set(data, merge=True)
-    message = f"Good Evening. \n Your order for your drink has been placed. Current Balance: {balance}\n Current Number of Drinks: {number_of_drinks}"
+    message = f"Good Evening. \nYour order for your drink has been placed. Current Balance: {balance}\nCurrent Number of Drinks: {number_of_drinks}"
     SUBJECT = "Order Successfully Placed"
 
     send_email(existing_data["email"], message, SUBJECT)
