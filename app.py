@@ -100,6 +100,20 @@ def serve_drinks(variable):
     return render_template("qr_code.html", data=data, drink_name=variable)
 
 
+@app.route('/profile/<id>', methods=['GET'])
+def serve_profile(id):
+    db = firestore.client()
+    doc_ref = db.collection(u'customers').document(id)
+    doc = doc_ref.get()
+    existing_data = doc.to_dict()
+    return render_template("profile.html", data=existing_data)
+
+
+@app.route('/details')
+def serve_details():
+    return render_template("details.html")
+
+
 @app.route('/management')
 def serve_management():
     db = firestore.client()
@@ -229,10 +243,10 @@ def get_todays_date():
 def make_existing_data_dicts(db, id, name):
     doc_ref = db.collection(u'customers').document(id)
     doc = doc_ref.get()
+    existing_data = doc.to_dict()
     drink_ref = db.collection(u'drink').document(name)
     doc_drink = drink_ref.get()
     drink_data = doc_drink.to_dict()
-    existing_data = doc.to_dict()
     return doc_ref, drink_data, existing_data
 
 
