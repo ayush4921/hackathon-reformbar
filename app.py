@@ -25,6 +25,7 @@ def makedatabasefrominfoandreturntheqrcode():
     weight = request.form["weight"]
     id = request.form["id"]
     id_official = request.form["id_official"]
+    photoURL = request.form["photoURL"]
     db = firestore.client()
 
     doc_ref = db.collection(u'customers').document(id)
@@ -39,6 +40,7 @@ def makedatabasefrominfoandreturntheqrcode():
         u'drinks': "0",
         u'id_official': id_official,
         u'alcohol': "0",
+        u'photoURL': photoURL,
         u'nuisance': "0",
     }
     doc_ref.set(data)
