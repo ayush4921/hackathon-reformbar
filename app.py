@@ -19,7 +19,7 @@ CORS(app)
 
 
 @app.route("/makeqrcodeandsetupfirebase", methods=["POST"])
-def makedatabasefrominfoandreturntheqrcode():
+def make_database_from_info_and_return_the_qrcode():
     todays_date = datetime.today().strftime('%Y-%m-%d')
     dob, email, gender, height, id, id_official, name, payment, photoURL, weight = request_fields_from_form()
     db = firestore.client()
@@ -43,7 +43,7 @@ def makedatabasefrominfoandreturntheqrcode():
         u'date_updated': todays_date,
     }
     doc_ref.set(data)
-    makeqrcodes(id)
+    make_qr_codes(id)
     print("Made qr code")
     return "Made Image"
 
@@ -62,7 +62,7 @@ def request_fields_from_form():
     return dob, email, gender, height, id, id_official, name, payment, photoURL, weight
 
 
-def makeqrcodes(id):
+def make_qr_codes(id):
     import os
     qr = qrcode.QRCode(
         version=1,
