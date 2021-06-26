@@ -18,13 +18,13 @@ CORS(app)
 
 @app.route("/makeqrcodeandsetupfirebase", methods=["POST"])
 def makedatabasefrominfoandreturntheqrcode():
-    name = request.form["name"]
-    dob = request.form["dob"]
-    gender = request.form["gender"]
-    payment = request.form["payment"]
-    height = request.form["height"]
-    weight = request.form["weight"]
-    id = request.form["id"]
+    name = request.args.get("name", "False")
+    dob = request.args.get("dob", "False")
+    gender = request.args.get("gender", "False")
+    payment = request.args.get("payment", "False")
+    height = request.args.get("height", "False")
+    weight = request.args.get("weight", "False")
+    id = request.args.get("id", "False")
     db = firestore.client()
 
     doc_ref = db.collection(u'customers').document(id)
@@ -58,7 +58,7 @@ def makeqrcodes(id):
     img.save(f'{id}.png')
 
 
-@app.route("/get", methods=["POST"])
+@ app.route("/get", methods=["POST"])
 def chatbot_response():
     msg = request.form["msg"]
     ints = predict_class(msg, model)
