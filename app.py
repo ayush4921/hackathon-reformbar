@@ -250,6 +250,7 @@ def send_email(email):
     sender_email = 'pogchampvignesh123@gmail.com'
     receiver_email = email
     password = "vigneshisbae123"
+    SUBJECT = "High Number Of Drinking Attempts"
     message = '''Good evening
 
             We have observed that you have been going out to the bar very often. 
@@ -261,6 +262,7 @@ def send_email(email):
             
             Thank you Sir/Ma'am
     '''
+    message = 'Subject: {}\n\n{}'.format(SUBJECT, message)
 
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_server, port) as server:
