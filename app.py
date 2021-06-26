@@ -112,7 +112,6 @@ def add_drink():
     bac = calculate_bac(float(existing_data["drinks"]), float(existing_data["weight"]), existing_data["gender"], alcohol_consumed=float(
         existing_data["alcohol"])+float(drink_data["alcohol"]))
     if bac < 0.07 and float(existing_data["payment"]) > float(drink_data["price"]) and age > 18:
-
         data = {
             u'drinks': str(float(existing_data["drinks"])+1),
             u'alcohol': str(float(existing_data["alcohol"])+float(drink_data["alcohol"])),
@@ -121,6 +120,12 @@ def add_drink():
         doc_ref.set(data, merge=True)
         return "Successful Order Placed"
     else:
+        if bac > 0.07:
+            return  "Unsuccessful order:  BAC levels too high"
+        elif float(existing_data["payment"]) > float(drink_data["price"]):
+            return "Unsuccessful order: Not enough money"
+        elif age > 18:
+            return "Unsuccessful order: Under the legal age of alcohol consumption"
         return "Unsuccessful Order"
 
 
