@@ -252,16 +252,12 @@ def send_email(email):
     password = "vigneshisbae123"
     SUBJECT = "High Number Of Drinking Attempts"
     message = '''Good evening
-
-            We have observed that you have been going out to the bar very often. 
-            It should be noted that, while drinking in control is acceptable, alcohol intake can lead to a plethora of health issues, including liver failure, hypertension and anxiety.
-            
-            We highly recommend you visit a counselor or doctor in order to escape this addiction that may be fueling you, both for the sake of your physical and mental well-being. We can assist in reaching out to an anti-addiction counselor who would walk you through transforming your drinking habits for a better future for yourself
-            
-            If you would like assistance, kindly send a mail to us and we will inform the counselor of the same. 
-            
-            Thank you Sir/Ma'am
-    '''
+We have observed that you have been going out to the bar very often. 
+It should be noted that, while drinking in control is acceptable, alcohol intake can lead to a plethora of health issues, including liver failure, hypertension and anxiety.
+We highly recommend you visit a counselor or doctor in order to escape this addiction that may be fueling you, both for the sake of your physical and mental well-being. We can assist in reaching out to an anti-addiction counselor who would walk you through transforming your drinking habits for a better future for yourself
+If you would like assistance, kindly send a mail to us and we will inform the counselor of the same. 
+Thank you Sir/Ma'am
+'''
     message = 'Subject: {}\n\n{}'.format(SUBJECT, message)
 
     context = ssl.create_default_context()
