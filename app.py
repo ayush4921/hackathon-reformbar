@@ -38,7 +38,8 @@ def makedatabasefrominfoandreturntheqrcode():
         u'height': height,
         u'weight': weight,
         u'drinks': "0",
-        u'id_official': id_official
+        u'id_official': id_official,
+        u'alcohol': "0",
     }
     doc_ref.set(data)
     makeqrcodes(id)
@@ -76,11 +77,15 @@ def serve_register():
 @app.route('/drink/<variable>', methods=['GET'])
 def serve_drinks(variable):
     data = {"drink_id": variable, "abc": "abc"}
-    return render_template("qr_code.html", data=data)
+    return render_template("qr_code.html", data=data, drink_name=variable)
 
 
 @app.route('/add_drink', methods=['POST'])
 def add_drink():
+    import dateutil
+    import datetime
+    from dateutil import parser
+
     name = request.form["drink"]
     id = request.form["id"]
     db = firestore.client()
@@ -93,12 +98,25 @@ def add_drink():
 
     drink_data = doc_drink.to_dict()
     existing_data = doc.to_dict()
-    if existing_data["drinks"] < 3 and int(existing_data["payment"]) > int(drink_data["price"]):
+
+    date = parser.parse(existing_data["dob"])
+    now = datetime.datetime.utcnow()
+
+    now = now.date()
+
+    # Get the difference between the current date and the birthday
+    age = dateutil.relativedelta.relativedelta(now, date)
+    age = age.years
+    print(existing_data)
+    print(drink_data)
+    bac = calculate_bac(float(existing_data["drinks"]), float(existing_data["weight"]), existing_data["gender"], alcohol_consumed=float(
+        existing_data["alcohol"])+float(drink_data["alcohol"]))
+    if bac < 0.07 and float(existing_data["payment"]) > float(drink_data["price"]) and age > 18:
 
         data = {
-            u'drinks': str(int(existing_data["drinks"])+1),
-            u'alcohol': str(drink_data["alcohol"]),
-            u'payment': str(int(existing_data["drinks"])-int(drink_data["price"]))
+            u'drinks': str(float(existing_data["drinks"])+1),
+            u'alcohol': str(float(existing_data["alcohol"])+float(drink_data["alcohol"])),
+            u'payment': str(float(existing_data["payment"])-float(drink_data["price"]))
         }
         doc_ref.set(data, merge=True)
         return "Successful Order Placed"
@@ -106,5 +124,11 @@ def add_drink():
         return "Unsuccessful Order"
 
 
+def calculate_bac(no_of_drinks, body_weight_in_kg, gender, r=0.55, alcohol_consumed=14):
+    if gender == 'male':
+        r = 0.68
+    return no_of_drinks * alcohol_consumed * 100 / (body_weight_in_kg * r * 1000)
+
+
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
