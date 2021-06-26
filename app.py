@@ -4,7 +4,10 @@ from flask_cors import CORS
 import firebase_admin
 from firebase_admin import firestore
 import qrcode
-
+import dateutil
+from dateutil import parser
+from datetime import datetime
+import smtplib
 
 cred_obj = firebase_admin.credentials.Certificate(
     'reformbar-a4b02-firebase-adminsdk-y0re0-40695dbdf0.json')
@@ -16,15 +19,8 @@ CORS(app)
 
 @app.route("/makeqrcodeandsetupfirebase", methods=["POST"])
 def makedatabasefrominfoandreturntheqrcode():
-    name = request.form["name"]
-    dob = request.form["dob"]
-    gender = request.form["gender"]
-    payment = request.form["payment"]
-    height = request.form["height"]
-    weight = request.form["weight"]
-    id = request.form["id"]
-    id_official = request.form["id_official"]
-    photoURL = request.form["photoURL"]
+    todays_date = datetime.today().strftime('%Y-%m-%d')
+    dob, email, gender, height, id, id_official, name, payment, photoURL, weight = request_fields_from_form()
     db = firestore.client()
 
     doc_ref = db.collection(u'customers').document(id)
@@ -41,11 +37,28 @@ def makedatabasefrominfoandreturntheqrcode():
         u'alcohol': "0",
         u'photoURL': photoURL,
         u'nuisance': "0",
+        u'email': email,
+        u'drinking_attempts': "0",
+        u'date_updated': todays_date,
     }
     doc_ref.set(data)
     makeqrcodes(id)
     print("Made qr code")
     return "Made Image"
+
+
+def request_fields_from_form():
+    name = request.form["name"]
+    dob = request.form["dob"]
+    gender = request.form["gender"]
+    payment = request.form["payment"]
+    height = request.form["height"]
+    weight = request.form["weight"]
+    id = request.form["id"]
+    id_official = request.form["id_official"]
+    photoURL = request.form["photoURL"]
+    email = request.form["email"]
+    return dob, email, gender, height, id, id_official, name, payment, photoURL, weight
 
 
 def makeqrcodes(id):
@@ -99,58 +112,175 @@ def serve_management():
 
 @app.route('/add_drink', methods=['POST'])
 def add_drink():
-    import dateutil
-    import datetime
-    from dateutil import parser
+
+    todays_date = get_todays_date()
     password = "36fb75181c26195f01aff5144aa1464b"
     name = request.form["drink"]
     id = request.form["id"]
     db = firestore.client()
-
-    doc_ref = db.collection(u'customers').document(id)
-    doc = doc_ref.get()
-
-    drink_ref = db.collection(u'drink').document(name)
-    doc_drink = drink_ref.get()
-
-    drink_data = doc_drink.to_dict()
-    existing_data = doc.to_dict()
+    accepted_nuicances, bac_accepted, days_after_database_refreshes, drinking_attemps_before_email, legal_drinking_age = make_limit_constants()
+    doc_ref, drink_data, existing_data = make_existing_data_dicts(db,  id, name)
 
     date = parser.parse(existing_data["dob"])
-    now = datetime.datetime.utcnow()
+    date_updated = parser.parse(existing_data["date_updated"])
+    now = get_now_time()
+    number_of_days = get_days(date_updated, now)
+    age = get_age_difference(date, now)
 
-    now = now.date()
+    bac = calculate_bac(float(existing_data["drinks"]), float(existing_data["weight"]), existing_data["gender"], alcohol_consumed=float(existing_data["alcohol"])+float(drink_data["alcohol"]))
 
-    # Get the difference between the current date and the birthday
-    age = dateutil.relativedelta.relativedelta(now, date)
-    age = age.years
-    print(existing_data)
-    print(drink_data)
-    bac = calculate_bac(float(existing_data["drinks"]), float(existing_data["weight"]), existing_data["gender"], alcohol_consumed=float(
-        existing_data["alcohol"])+float(drink_data["alcohol"]))
-    if request.form["password"] == password and float(existing_data["nuisance"]) < 1 and bac < 0.07 and float(existing_data["payment"]) > float(drink_data["price"]) and age > 18:
-        data = {
-            u'drinks': str(float(existing_data["drinks"])+1),
-            u'alcohol': str(float(existing_data["alcohol"])+float(drink_data["alcohol"])),
-            u'payment': str(float(existing_data["payment"])-float(drink_data["price"]))
-        }
-        doc_ref.set(data, merge=True)
+    if number_of_days > days_after_database_refreshes:
+        doc_ref, drink_data, existing_data = flush_database(db, doc_ref, drink_data, existing_data, id, name,
+                                                            todays_date)
+
+    if request.form["password"] == password and float(existing_data["nuisance"]) < accepted_nuicances and bac < bac_accepted and float(existing_data["payment"]) > float(drink_data["price"]) and age > legal_drinking_age:
+        send_successful_order(doc_ref, drink_data, existing_data)
         return "Successful Order Placed"
     else:
-        if bac > 0.07:
-            return "Unsuccessful order:  BAC levels too high"
-        elif float(existing_data["payment"]) < float(drink_data["price"]):
-            return "Unsuccessful order: Not enough money"
-        elif age < 18:
-            return "Unsuccessful order: Under the legal age of alcohol consumption"
-        elif float(existing_data["nuisance"]) >= 1:
-            return "Unsuccessful order: Misbehaviour"
-        elif request.form["password"] != password:
-            return "Unsuccessful order: Wrong Password"
-        return "Unsuccessful Order"
+        return_string = handle_unsuccessful_order(accepted_nuicances, age, bac, bac_accepted, doc_ref, drink_data,
+                                                  drinking_attemps_before_email, existing_data, legal_drinking_age,
+                                                  password)
+        return return_string
 
 
-def calculate_bac(no_of_drinks, body_weight_in_kg, gender, r=0.55, alcohol_consumed=14):
+def handle_unsuccessful_order(accepted_nuicances, age, bac, bac_accepted, doc_ref, drink_data,
+                              drinking_attemps_before_email, existing_data, legal_drinking_age, password):
+    update_drinking_attempts(doc_ref, existing_data)
+    return_string = "Unsuccessful Order"
+    if float(existing_data["drinking_attempts"]) > drinking_attemps_before_email:
+        send_email(existing_data["email"])
+    return_string = set_return_string(accepted_nuicances, age, bac, bac_accepted, drink_data, existing_data,
+                                      legal_drinking_age, password, return_string)
+    return return_string
+
+
+def set_return_string(accepted_nuicances, age, bac, bac_accepted, drink_data, existing_data, legal_drinking_age,
+                      password, return_string):
+    if bac > bac_accepted:
+        return_string = "Unsuccessful order:  BAC levels too high"
+    elif float(existing_data["payment"]) < float(drink_data["price"]):
+        return_string = "Unsuccessful order: Not enough money"
+    elif age < legal_drinking_age:
+        return_string = "Unsuccessful order: Under the legal age of alcohol consumption"
+    elif float(existing_data["nuisance"]) >= accepted_nuicances:
+        return_string = "Unsuccessful order: Misbehaviour"
+    elif request.form["password"] != password:
+        return_string = "Unsuccessful order: Wrong Password"
+    return return_string
+
+
+def flush_database(db, doc_ref, drink_data, existing_data, id, name, todays_date):
+    data = {
+        u'drinks': str(0),
+        u'drinking_attempts': str(0),
+        u'alcohol': str(0),
+        u'date_updated': todays_date,
+    }
+    doc_ref.set(data, merge=True)
+    doc_ref, drink_data, existing_data = make_existing_data_dicts(db, id, name)
+    return doc_ref, drink_data, existing_data
+
+
+def get_days(date_updated, now):
+    number_of_days = dateutil.relativedelta.relativedelta(now, date_updated)
+    number_of_days = number_of_days.days
+    return number_of_days
+
+
+def get_age_difference(date, now):
+    age = dateutil.relativedelta.relativedelta(now, date)
+    age = age.years
+    return age
+
+
+def get_now_time():
+    now = datetime.datetime.utcnow()
+    now = now.date()
+    return now
+
+
+def make_limit_constants():
+    days_after_database_refreshes = 4
+    drinking_attemps_before_email = 4
+    legal_drinking_age = 18
+    bac_accepted = 0.07
+    accepted_nuicances = 1
+    return accepted_nuicances, bac_accepted, days_after_database_refreshes, drinking_attemps_before_email, legal_drinking_age
+
+
+def get_todays_date():
+    from datetime import datetime
+    todays_date = datetime.today().strftime('%Y-%m-%d')
+    return todays_date
+
+
+def make_existing_data_dicts(db, id, name):
+    doc_ref = db.collection(u'customers').document(id)
+    doc = doc_ref.get()
+    drink_ref = db.collection(u'drink').document(name)
+    doc_drink = drink_ref.get()
+    drink_data = doc_drink.to_dict()
+    existing_data = doc.to_dict()
+    return doc_ref, drink_data, existing_data
+
+
+def send_successful_order(doc_ref, drink_data, existing_data):
+    data = {
+        u'drinks': str(float(existing_data["drinks"]) + 1),
+        u'drinking_attempts': str(float(existing_data["drinking_attempts"]) + 1),
+        u'alcohol': str(float(existing_data["alcohol"]) + float(drink_data["alcohol"])),
+        u'payment': str(float(existing_data["payment"]) - float(drink_data["price"]))
+    }
+    doc_ref.set(data, merge=True)
+
+
+def update_drinking_attempts(doc_ref, existing_data):
+    data = {
+        u'drinking_attempts': str(float(existing_data["drinking_attempts"]) + 1),
+    }
+    doc_ref.set(data, merge=True)
+
+
+def send_email(email):
+
+    gmail_user = 'pogchampvignesh123@gmail.com'
+    gmail_password = 'vigneshisbae123'
+
+    sent_from = gmail_user
+    to = [email, ]
+    subject = 'Noticed High Number Of Drinking Attempts'
+    body = '''Good evening
+
+            We have observed that you have been going out to the bar very often. 
+            It should be noted that, while drinking in control is acceptable, alcohol intake can lead to a plethora of health issues, including liver failure, hypertension and anxiety.
+            
+            We highly recommend you visit a counselor or doctor in order to escape this addiction that may be fueling you, both for the sake of your physical and mental well-being. We can assist in reaching out to an anti-addiction counselor who would walk you through transforming your drinking habits for a better future for yourself
+            
+            If you would like assistance, kindly send a mail to us and we will inform the counselor of the same. 
+            
+            Thank you Sir/Ma'am
+    '''
+
+    email_text = """\
+    From: %s
+    To: %s
+    Subject: %s
+
+    %s
+    """ % (sent_from, ", ".join(to), subject, body)
+
+    try:
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 587)
+        server.ehlo()
+        server.login(gmail_user, gmail_password)
+        server.sendmail(sent_from, to, email_text)
+        server.close()
+        print('Email sent!')
+    except:
+        print('Something went wrong...')
+
+
+def calculate_bac(no_of_drinks, body_weight_in_kg, gender, r=0.55, alcohol_consumed=14.0):
     if gender == 'Male':
         r = 0.68
     return no_of_drinks * alcohol_consumed * 100 / (body_weight_in_kg * r * 1000)
