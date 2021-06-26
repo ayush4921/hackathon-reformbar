@@ -3,7 +3,6 @@ from flask import Flask, request, render_template
 from flask_cors import CORS
 import firebase_admin
 from firebase_admin import firestore
-from flask import send_file
 import qrcode
 
 
