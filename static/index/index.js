@@ -24,7 +24,7 @@ $("#submit_button").click(function (event) {
           email: user.email,
         },
         type: "POST",
-        url: "https://reformbar.herokuapp.com/makeqrcodeandsetupfirebase",
+        url: "/makeqrcodeandsetupfirebase",
       }).done(function (data) {
         $("#form1").hide();
         $("#result").html(
