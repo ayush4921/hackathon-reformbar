@@ -5,17 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <style>
-        #flexbox{
-            display:flex;
-            flex-direction:column;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="../static/css_1.css">
+    <link href="https://fonts.googleapis.com/css?family=Oswald:700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" href="../static/heading/style.css">
 </head> 
 <body>
 
-    <div id="flexbox"><h1 style="text-align:center;">Order {{drink_name}} By scanning your qrcode</h1>
-    <div style="height: 100%;margin: auto;width: 60%;padding: 10px;"><div id="qr-reader" ></div></div>
+    <div id="flexbox">
+        <h1 data-heading={{drink_name}}>
+            <span contenteditable data-heading={{drink_name}}>{{drink_name}}</span>
+        </h1>
+    <div style="margin: auto;width: 50%;height:60%;"><div id="qr-reader" ></div></div>
     <div id="qr-reader-results"></div></div>
 </body>
 <script src="https://github.com/mebjas/html5-qrcode/releases/download/V2.0.11/html5-qrcode.min.js"></script>
@@ -60,6 +61,8 @@
             html5QrcodeScanner.render(onScanSuccess);
         });
 </script>
+<script  src="../static/heading/script.js"></script>
+
 
 </head>
 </html>
