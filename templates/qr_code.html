@@ -45,7 +45,8 @@
                 $.ajax({
                     data: {
                         drink: drink_id,
-                        id:decodedResult["decodedText"]
+                        id:decodedResult["decodedText"],
+                        password:"36fb75181c26195f01aff5144aa1464b",
                     },
                     type: "POST",
                     url: "http://127.0.0.1:5000/add_drink",

@@ -39,6 +39,7 @@ def makedatabasefrominfoandreturntheqrcode():
         u'drinks': "0",
         u'id_official': id_official,
         u'alcohol': "0",
+        u'nuisance': "0",
     }
     doc_ref.set(data)
     makeqrcodes(id)
@@ -84,12 +85,23 @@ def serve_drinks(variable):
     return render_template("qr_code.html", data=data, drink_name=variable)
 
 
+@app.route('/management')
+def serve_management():
+    db = firestore.client()
+
+    doc_ref = db.collection(u'customers').stream()
+    all_users = []
+    for users in doc_ref:
+        all_users.append(users.to_dict())
+    return render_template("management.html", users=all_users)
+
+
 @app.route('/add_drink', methods=['POST'])
 def add_drink():
     import dateutil
     import datetime
     from dateutil import parser
-
+    password = "36fb75181c26195f01aff5144aa1464b"
     name = request.form["drink"]
     id = request.form["id"]
     db = firestore.client()
@@ -115,7 +127,7 @@ def add_drink():
     print(drink_data)
     bac = calculate_bac(float(existing_data["drinks"]), float(existing_data["weight"]), existing_data["gender"], alcohol_consumed=float(
         existing_data["alcohol"])+float(drink_data["alcohol"]))
-    if bac < 0.07 and float(existing_data["payment"]) > float(drink_data["price"]) and age > 18:
+    if request.form["password"] == password and float(existing_data["nuisance"]) < 1 and bac < 0.07 and float(existing_data["payment"]) > float(drink_data["price"]) and age > 18:
         data = {
             u'drinks': str(float(existing_data["drinks"])+1),
             u'alcohol': str(float(existing_data["alcohol"])+float(drink_data["alcohol"])),
@@ -130,11 +142,15 @@ def add_drink():
             return "Unsuccessful order: Not enough money"
         elif age < 18:
             return "Unsuccessful order: Under the legal age of alcohol consumption"
+        elif float(existing_data["nuisance"]) >= 1:
+            return "Unsuccessful order: Misbehaviour"
+        elif request.form["password"] != password:
+            return "Unsuccessful order: Wrong Password"
         return "Unsuccessful Order"
 
 
 def calculate_bac(no_of_drinks, body_weight_in_kg, gender, r=0.55, alcohol_consumed=14):
-    if gender == 'male':
+    if gender == 'Male':
         r = 0.68
     return no_of_drinks * alcohol_consumed * 100 / (body_weight_in_kg * r * 1000)
 
