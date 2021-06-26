@@ -197,7 +197,7 @@ def get_age_difference(date, now):
 
 
 def get_now_time():
-    now = datetime.datetime.utcnow()
+    now = datetime.utcnow()
     now = now.date()
     return now
 
