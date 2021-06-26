@@ -70,7 +70,6 @@ def makeqrcodes(id):
         box_size=10,
         border=4,
     )
-
     qr.add_data(id)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
@@ -123,7 +122,6 @@ def serve_management():
 
 @app.route('/add_drink', methods=['POST'])
 def add_drink():
-
     todays_date = get_todays_date()
     password = "36fb75181c26195f01aff5144aa1464b"
     name = request.form["drink"]
@@ -132,20 +130,16 @@ def add_drink():
     accepted_nuicances, bac_accepted, days_after_database_refreshes, drinking_attemps_before_email, legal_drinking_age = make_limit_constants()
     doc_ref, drink_data, existing_data = make_existing_data_dicts(
         db,  id, name)
-
     date = parser.parse(existing_data["dob"])
     date_updated = parser.parse(existing_data["date_updated"])
     now = get_now_time()
     number_of_days = get_days(date_updated, now)
     age = get_age_difference(date, now)
-
     bac = calculate_bac(float(existing_data["drinks"]), float(
         existing_data["weight"]), existing_data["gender"], alcohol_consumed=float(existing_data["alcohol"])+float(drink_data["alcohol"]))
-
     if number_of_days > days_after_database_refreshes:
         doc_ref, drink_data, existing_data = flush_database(db, doc_ref, drink_data, existing_data, id, name,
                                                             todays_date)
-
     if request.form["password"] == password and float(existing_data["nuisance"]) < accepted_nuicances and bac < bac_accepted and float(existing_data["payment"]) > float(drink_data["price"]) and age > legal_drinking_age:
         send_successful_order(doc_ref, drink_data, existing_data)
         return "Successful Order Placed"
@@ -238,14 +232,16 @@ def get_todays_date():
 
 def make_existing_data_dicts(db, id, name):
     doc_ref = db.collection(u'customers').document(id)
-    return doc_ref, get_dict_for_document_and_collection(name,'drink'), get_dict_for_document_and_collection(id,'customers')
+    return doc_ref, get_dict_for_document_and_collection(name, 'drink'), get_dict_for_document_and_collection(id, 'customers')
 
-def get_dict_for_document_and_collection(document,collection):
+
+def get_dict_for_document_and_collection(document, collection):
     db = firestore.client()
     doc_ref = db.collection(collection).document(document)
     doc = doc_ref.get()
     existing_data = doc.to_dict()
     return existing_data
+
 
 def send_successful_order(doc_ref, drink_data, existing_data):
     balance = str(float(existing_data["payment"]) - float(drink_data["price"]))
