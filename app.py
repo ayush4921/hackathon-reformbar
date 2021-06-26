@@ -151,7 +151,16 @@ def handle_unsuccessful_order(accepted_nuicances, age, bac, bac_accepted, doc_re
     update_drinking_attempts(doc_ref, existing_data)
     return_string = "Unsuccessful Order"
     if float(existing_data["drinking_attempts"]) > drinking_attemps_before_email:
-        send_email(existing_data["email"])
+        message = '''Good evening
+We have observed that you have been going out to the bar very often. 
+It should be noted that, while drinking in control is acceptable, alcohol intake can lead to a plethora of health issues, including liver failure, hypertension and anxiety.
+We highly recommend you visit a counselor or doctor in order to escape this addiction that may be fueling you, both for the sake of your physical and mental well-being. We can assist in reaching out to an anti-addiction counselor who would walk you through transforming your drinking habits for a better future for yourself
+If you would like assistance, kindly send a mail to us and we will inform the counselor of the same. 
+Thank you Sir/Ma'am
+'''
+        SUBJECT = "High Number Of Drinking Attempts"
+
+        send_email(existing_data["email"], message, SUBJECT)
     return_string = set_return_string(accepted_nuicances, age, bac, bac_accepted, drink_data, existing_data,
                                       legal_drinking_age, password, return_string)
     return return_string
@@ -228,13 +237,19 @@ def make_existing_data_dicts(db, id, name):
 
 
 def send_successful_order(doc_ref, drink_data, existing_data):
+    balance = str(float(existing_data["payment"]) - float(drink_data["price"]))
+    number_of_drinks = str(float(existing_data["drinks"]) + 1)
     data = {
-        u'drinks': str(float(existing_data["drinks"]) + 1),
+        u'drinks': number_of_drinks,
         u'drinking_attempts': str(float(existing_data["drinking_attempts"]) + 1),
         u'alcohol': str(float(existing_data["alcohol"]) + float(drink_data["alcohol"])),
-        u'payment': str(float(existing_data["payment"]) - float(drink_data["price"]))
+        u'payment': balance,
     }
     doc_ref.set(data, merge=True)
+    message = f"Good Evening. \n Your order for your drink has been placed. Current Balance: {balance}\n Current Number of Drinks: {number_of_drinks}"
+    SUBJECT = "Order Successfully Placed"
+
+    send_email(existing_data["email"], message, SUBJECT)
 
 
 def update_drinking_attempts(doc_ref, existing_data):
@@ -244,20 +259,13 @@ def update_drinking_attempts(doc_ref, existing_data):
     doc_ref.set(data, merge=True)
 
 
-def send_email(email):
+def send_email(email, message, SUBJECT):
     port = 587  # For starttls
     smtp_server = "smtp.gmail.com"
     sender_email = 'pogchampvignesh123@gmail.com'
     receiver_email = email
     password = "vigneshisbae123"
-    SUBJECT = "High Number Of Drinking Attempts"
-    message = '''Good evening
-We have observed that you have been going out to the bar very often. 
-It should be noted that, while drinking in control is acceptable, alcohol intake can lead to a plethora of health issues, including liver failure, hypertension and anxiety.
-We highly recommend you visit a counselor or doctor in order to escape this addiction that may be fueling you, both for the sake of your physical and mental well-being. We can assist in reaching out to an anti-addiction counselor who would walk you through transforming your drinking habits for a better future for yourself
-If you would like assistance, kindly send a mail to us and we will inform the counselor of the same. 
-Thank you Sir/Ma'am
-'''
+    message = message
     message = 'Subject: {}\n\n{}'.format(SUBJECT, message)
 
     context = ssl.create_default_context()
