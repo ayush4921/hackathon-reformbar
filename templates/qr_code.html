@@ -54,6 +54,7 @@ docReady(function () {
       }).done(function (data) {
         console.log("Request sent");
         alert(data);
+        $(location).attr('href', '/bar')
       });
       var elem = document.getElementById("qr-reader");
       elem.parentNode.removeChild(elem);
